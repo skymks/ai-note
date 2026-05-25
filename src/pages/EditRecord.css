@@ -1,0 +1,100 @@
+.editrecord-page {
+  min-height: 100vh;
+  background: #f5f6fa;
+}
+
+.editrecord-nav {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.editrecord-back {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.editrecord-nav-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-left: 4px;
+}
+
+.editrecord-save {
+  background: none;
+  border: none;
+  color: #1890ff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.editrecord-save:disabled {
+  color: #ccc;
+}
+
+.editrecord-form {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editrecord-title-input {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #fff;
+  outline: none;
+  color: #333;
+}
+
+.editrecord-title-input::placeholder {
+  color: #ccc;
+  font-weight: 400;
+}
+
+.editrecord-image {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.editrecord-image img {
+  width: 100%;
+  display: block;
+}
+
+.editrecord-content {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 15px;
+  line-height: 1.7;
+  background: #fff;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  color: #333;
+  min-height: 250px;
+}
+
+.editrecord-content::placeholder {
+  color: #ccc;
+}

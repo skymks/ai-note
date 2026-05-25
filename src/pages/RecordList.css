@@ -1,0 +1,149 @@
+.recordlist-page {
+  padding: 16px 16px 100px;
+  position: relative;
+  min-height: 100vh;
+}
+
+.recordlist-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.recordlist-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.recordlist-count {
+  font-size: 13px;
+  color: #999;
+}
+
+.recordlist-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 8px;
+}
+
+.recordlist-empty p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #999;
+}
+
+.recordlist-empty span {
+  font-size: 12px;
+  color: #ccc;
+}
+
+.recordlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recordlist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  transition: transform 0.1s;
+}
+
+.recordlist-item:active {
+  transform: scale(0.98);
+}
+
+.recordlist-item-type {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.recordlist-item-type--image {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.recordlist-item-type--voice {
+  background: #fff0f6;
+  color: #f5576c;
+}
+
+.recordlist-item-type--text {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.recordlist-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recordlist-item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordlist-item-preview {
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordlist-item-date {
+  font-size: 12px;
+  color: #ccc;
+  flex-shrink: 0;
+}
+
+.recordlist-fab {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  background: #1890ff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(24,144,255,0.4);
+  transition: transform 0.15s;
+  z-index: 10;
+}
+
+.recordlist-fab:active {
+  transform: scale(0.92);
+}
