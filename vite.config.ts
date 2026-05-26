@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: ['@paddleocr/paddleocr-js'],
+    exclude: ['@paddleocr/paddleocr-js', '@huggingface/transformers'],
     include: ['clipper-lib', '@techstark/opencv-js'],
   },
   server: {

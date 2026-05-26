@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { loadModel, transcribeAudio, audioBlobToFloat32 } from '../utils/whisper';
 import './VoiceRecord.css';
 
 interface Props {
@@ -10,97 +11,87 @@ export default function VoiceRecord({ onBack, onSave }: Props) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [recording, setRecording] = useState(false);
-  const [liveText, setLiveText] = useState('');
+  const [transcribing, setTranscribing] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recordingRef = useRef(false);
-  const finalTextRef = useRef('');
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      recognitionRef.current?.stop();
+      if (mediaRecorderRef.current?.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
     };
   }, []);
 
-  const startRecording = useCallback(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setContent(prev => prev + '\n[语音识别不可用，请手动输入内容]\n您的浏览器不支持Web Speech API。');
-      return;
-    }
+  const startRecording = useCallback(async () => {
+    setErrorMsg('');
+    chunksRef.current = [];
 
-    finalTextRef.current = '';
-    recordingRef.current = true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'zh-CN';
-    recognition.continuous = true;
-    recognition.interimResults = true;
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          finalTextRef.current += result[0].transcript;
-        } else {
-          interim += result[0].transcript;
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+
+        if (chunksRef.current.length === 0) return;
+
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+
+        try {
+          setTranscribing(true);
+          const audioData = await audioBlobToFloat32(blob);
+          await loadModel();
+          const text = await transcribeAudio(audioData);
+
+          if (text.trim()) {
+            setContent((prev) => (prev ? prev + '\n' + text.trim() : text.trim()));
+            setTitle((prev) => {
+              if (!prev.trim()) return text.trim().split('\n')[0].slice(0, 20);
+              return prev;
+            });
+          }
+        } catch (err) {
+          console.error('Transcription failed:', err);
+          setErrorMsg('语音转写失败，请重试');
+        } finally {
+          setTranscribing(false);
         }
-      }
-      setLiveText(finalTextRef.current + interim);
-    };
+      };
 
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        setLiveText('');
-        setContent(prev => prev + '\n[麦克风权限被拒绝，请在浏览器设置中允许麦克风访问]');
-        stopRecording();
-      } else if (event.error !== 'aborted') {
-        stopRecording();
-      }
-    };
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start(1000);
 
-    recognition.onend = () => {
-      if (recordingRef.current) {
-        try { recognition.start(); } catch { /* ignore */ }
-      }
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-
-    setRecording(true);
-    setDuration(0);
-    timerRef.current = setInterval(() => {
-      setDuration(d => d + 1);
-    }, 1000);
+      setRecording(true);
+      setDuration(0);
+      timerRef.current = setInterval(() => setDuration((d) => d + 1), 1000);
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+      setErrorMsg('无法访问麦克风，请检查权限设置');
+    }
   }, []);
 
   const stopRecording = useCallback(() => {
-    recordingRef.current = false;
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+
     setRecording(false);
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    const text = finalTextRef.current.trim();
-    if (text) {
-      setContent(prev => prev ? prev + '\n' + text : text);
-      if (!title.trim()) {
-        setTitle(text.split('\n')[0].slice(0, 20));
-      }
-    }
-    finalTextRef.current = '';
-    setLiveText('');
-  }, [title]);
+  }, []);
 
   const handleSave = () => {
     if (!title.trim() && !content.trim()) return;
@@ -127,13 +118,17 @@ export default function VoiceRecord({ onBack, onSave }: Props) {
         </button>
       </div>
 
+      {errorMsg && (
+        <div className="voicerecord-error">{errorMsg}</div>
+      )}
+
       <div className="voicerecord-form">
         <input
           className="voicerecord-title-input"
           type="text"
           placeholder="输入标题"
           value={title}
-          onChange={e => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
         />
 
         <div className="voicerecord-recorder">
@@ -141,6 +136,11 @@ export default function VoiceRecord({ onBack, onSave }: Props) {
             {recording ? (
               <div className="voicerecord-wave">
                 <span /><span /><span /><span /><span />
+              </div>
+            ) : transcribing ? (
+              <div className="voicerecord-transcribing">
+                <div className="voicerecord-spinner" />
+                <span>正在转写...</span>
               </div>
             ) : (
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -151,12 +151,10 @@ export default function VoiceRecord({ onBack, onSave }: Props) {
             )}
           </div>
           <span className="voicerecord-timer">{formatDuration(duration)}</span>
-          {liveText && (
-            <div className="voicerecord-live">{liveText}</div>
-          )}
           <button
             className={`voicerecord-btn ${recording ? 'voicerecord-btn--recording' : ''}`}
             onClick={recording ? stopRecording : startRecording}
+            disabled={transcribing}
           >
             {recording ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -174,9 +172,9 @@ export default function VoiceRecord({ onBack, onSave }: Props) {
 
         <textarea
           className="voicerecord-content"
-          placeholder="语音识别结果将显示在这里，也可手动输入..."
+          placeholder="录音结束后将自动转写文字，也可手动输入..."
           value={content}
-          onChange={e => setContent(e.target.value)}
+          onChange={(e) => setContent(e.target.value)}
           rows={6}
         />
       </div>
